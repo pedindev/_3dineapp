@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   url_launcher: ^6.1.12
   shared_preferences: ^2.2.0
+  flutter_launcher_icons: ^0.13.1
+  supabase_flutter: ^1.10.25
+
 
   
   
@@ -70,6 +73,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
    - assets/images/
+   - assets/modelos/
    
    
 
@@ -98,4 +102,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
- 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/logo.png"  
+  adaptive_icon_background: "#FFFFFF"  
+  adaptive_icon_foreground: "assets/logo/logo.png"

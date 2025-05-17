@@ -1,19 +1,21 @@
 class Rating {
+  final String id;
   final String modelId;
   final String userName;
   final int score; // 1 a 5
   final DateTime date;
 
   Rating({
+    this.id = '',
     required this.modelId,
     required this.userName,
     required this.score,
     required this.date,
   });
 
-  // Converter para JSON (para salvar no SharedPreferences)
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'modelId': modelId,
       'userName': userName,
       'score': score,
@@ -21,13 +23,17 @@ class Rating {
     };
   }
 
-  // Criar objeto a partir de JSON
   factory Rating.fromJson(Map<String, dynamic> json) {
     return Rating(
-      modelId: json['modelId'],
-      userName: json['userName'],
-      score: json['score'],
-      date: DateTime.parse(json['date']),
+      id: json['id']?.toString() ?? '',
+      modelId: json['modelId'] ?? json['model_id'] ?? '',
+      userName: json['userName'] ?? json['user_name'] ?? '',
+      score: json['score'] ?? 0,
+      date: json['date'] != null
+          ? DateTime.parse(json['date'])
+          : (json['created_at'] != null
+              ? DateTime.parse(json['created_at'])
+              : DateTime.now()),
     );
   }
 }

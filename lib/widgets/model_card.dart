@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/model_3d.dart';
-import '../services/rating_service.dart';
+import '../services/supabase_rating_service.dart';
 import '../screens/rating_screen.dart';
 
 class ModelCard extends StatefulWidget {
@@ -17,6 +17,7 @@ class ModelCard extends StatefulWidget {
 }
 
 class _ModelCardState extends State<ModelCard> {
+  final SupabaseRatingService _ratingService = SupabaseRatingService();
   double _averageRating = 0.0;
   bool _isLoading = true;
   
@@ -27,12 +28,23 @@ class _ModelCardState extends State<ModelCard> {
   }
   
   Future<void> _loadAverageRating() async {
-    final average = await RatingService.getAverageRating(widget.model.id);
-    
-    setState(() {
-      _averageRating = average;
-      _isLoading = false;
-    });
+    try {
+      final average = await _ratingService.getAverageRating(widget.model.id);
+      
+      if (mounted) {
+        setState(() {
+          _averageRating = average;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      print('Erro ao carregar média: $e');
+    }
   }
   
   @override

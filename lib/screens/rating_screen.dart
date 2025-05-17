@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/model_3d.dart';
 import '../models/rating.dart';
-import '../services/rating_service.dart';
+import '../services/supabase_rating_service.dart';
 
 class RatingScreen extends StatefulWidget {
   final Model3D model;
@@ -17,7 +17,8 @@ class RatingScreen extends StatefulWidget {
 
 class _RatingScreenState extends State<RatingScreen> {
   final TextEditingController _nameController = TextEditingController();
-  int _selectedRating = 3; // Valor padrão
+  final SupabaseRatingService _ratingService = SupabaseRatingService();
+  int _selectedRating = 0; // Valor padrão
   List<Rating> _ratings = [];
   bool _isLoading = true;
 
@@ -32,12 +33,22 @@ class _RatingScreenState extends State<RatingScreen> {
       _isLoading = true;
     });
     
-    final ratings = await RatingService.getRatingsForModel(widget.model.id);
-    
-    setState(() {
-      _ratings = ratings;
-      _isLoading = false;
-    });
+    try {
+      final ratings = await _ratingService.getRatingsForModel(widget.model.id);
+      
+      setState(() {
+        _ratings = ratings;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar avaliações: $e')),
+      );
+    }
   }
 
   Future<void> _submitRating() async {
@@ -55,17 +66,23 @@ class _RatingScreenState extends State<RatingScreen> {
       date: DateTime.now(),
     );
 
-    await RatingService.saveRating(newRating);
-    
-    // Atualizar avaliações
-    await _loadRatings();
-    
-    // Limpar campos
-    _nameController.clear();
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Avaliação enviada com sucesso!')),
-    );
+    try {
+      await _ratingService.saveRating(newRating);
+      
+      // Recarregar avaliações
+      await _loadRatings();
+      
+      // Limpar campos
+      _nameController.clear();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Avaliação enviada com sucesso!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao enviar avaliação: $e')),
+      );
+    }
   }
 
   @override
@@ -151,12 +168,22 @@ class _RatingScreenState extends State<RatingScreen> {
             const SizedBox(height: 24),
             
             // Lista de avaliações
-            const Text(
-              'Avaliações anteriores',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Avaliações de usuários',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadRatings,
+                  tooltip: 'Atualizar avaliações',
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             
@@ -164,7 +191,7 @@ class _RatingScreenState extends State<RatingScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _ratings.isEmpty
-                      ? const Center(child: Text('Nenhuma avaliação ainda'))
+                      ? const Center(child: Text('Nenhuma avaliação ainda. Seja o primeiro!'))
                       : ListView.builder(
                           itemCount: _ratings.length,
                           itemBuilder: (context, index) {
